@@ -1,0 +1,3 @@
+{
+    "C_Cpp.default.compilerPath": "../xpack-riscv-none-elf-gcc-13.2.0-2/bin/riscv-none-elf-gcc"
+}
