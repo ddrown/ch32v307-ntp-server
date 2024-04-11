@@ -1,4 +1,6 @@
 #pragma once
 
+#include "tiny-macro-os.h"
+
 void uart_init(uint32_t baudrate);
-void uart_poll();
+extern OS_TASK(uart_poll, void);

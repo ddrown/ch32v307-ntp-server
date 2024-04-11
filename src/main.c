@@ -17,7 +17,6 @@ int main(void)
     printf("Enter main loop.\n");
     while(1) {
     	lwip_loop();
-        uart_poll();
     }
 }
 

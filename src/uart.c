@@ -1,6 +1,7 @@
 #include "debug.h"
 #include <ch32v30x.h>
 #include "commandline.h"
+#include "uart.h"
 
 static void uart_init_clocks() {
    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA, ENABLE);
@@ -40,8 +41,15 @@ void uart_init(uint32_t baudrate) {
     uart_init_base(baudrate);
 }
 
-void uart_poll() {
+OS_TASK(uart_poll, void) {
+    OS_TASK_START(uart_poll);
+
     if(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) != RESET) {
         cmdline_addchr(USART_ReceiveData(USART1));
     }
+
+    // yield and return to the start next call
+    OS_TASK_CWAITX(0);
+
+    OS_TASK_END(uart_poll);
 }
