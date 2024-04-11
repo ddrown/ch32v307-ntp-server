@@ -4,6 +4,7 @@
 #include "timer.h"
 #include "ping.h"
 #include "uart.h"
+#include "tiny-os-task.h"
 
 int main(void)
 {
