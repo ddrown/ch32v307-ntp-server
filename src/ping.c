@@ -15,7 +15,7 @@ static uint16_t ping_seq = 0;
 
 #define DEFAULT_IPV4_HEADER_LEN 20
 
-static unsigned char ping_recv(void *arg, struct raw_pcb *pcb, struct pbuf *p, const struct ip4_addr *addr) {
+static unsigned char ping_recv(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr) {
   uint32_t end_ping;
 
   if(p->tot_len < DEFAULT_IPV4_HEADER_LEN+sizeof(struct icmp_echo_hdr)) {

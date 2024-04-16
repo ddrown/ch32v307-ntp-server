@@ -23,10 +23,8 @@ int main(void)
 /* IP allocation success callback, users add initialization function about network process here */
 void lwip_init_success_callback(ip_addr_t *ip)
 {
-    printf("IP %ld.%ld.%ld.%ld\n\n",  \
-        ((ip->addr)&0x000000ff),       \
-        (((ip->addr)&0x0000ff00)>>8),  \
-        (((ip->addr)&0x00ff0000)>>16), \
-        ((ip->addr)&0xff000000)>>24);
+    char ip_str[IP4ADDR_STRLEN_MAX];
+    ip4addr_ntoa_r(ip_2_ip4(ip), ip_str, sizeof(ip_str));
+    printf("IP %s\n\n", ip_str);
     ping_init();
 }
