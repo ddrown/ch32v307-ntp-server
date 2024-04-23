@@ -1,6 +1,7 @@
 #include "debug.h"
 #include "commandline.h"
 #include "ping.h"
+#include "ping6.h"
 #include "timer.h"
 #include "lwip_task.h"
 #include "lwip/ip_addr.h"
@@ -99,6 +100,8 @@ static void ip_status() {
 static void run_command(char *cmdline) {
   if(strncmp("ping ", cmdline, 5) == 0) {
     ping_send(cmdline+5);
+  } else if(strncmp("ping6 ", cmdline, 5) == 0) {
+    ping6_send(cmdline+6);
   } else if(strcmp("tim", cmdline) == 0) {
     printf("%lu %lu\n", now(), sys_now());
   } else if(strcmp("phy", cmdline) == 0) {

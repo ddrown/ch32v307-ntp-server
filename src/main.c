@@ -3,6 +3,7 @@
 #include "lwip/ip_addr.h"
 #include "timer.h"
 #include "ping.h"
+#include "ping6.h"
 #include "uart.h"
 #include "tiny-os-task.h"
 #include "ntp.h"
@@ -29,5 +30,6 @@ void lwip_init_success_callback(ip_addr_t *ip)
     ip4addr_ntoa_r(ip_2_ip4(ip), ip_str, sizeof(ip_str));
     printf("IP %s\n\n", ip_str);
     ping_init();
+    ping6_init();
     ntp_init();
 }
