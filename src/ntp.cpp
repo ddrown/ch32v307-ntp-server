@@ -1,3 +1,5 @@
+extern "C" {
+
 #include <string.h>
 #include <stdint.h>
 #include "tiny-macro-os.h"
@@ -10,7 +12,7 @@
 
 static struct udp_pcb *ntp_pcb = NULL;
 
-__attribute__((packed)) struct ntp_packet {
+struct __attribute__((packed)) ntp_packet {
   // 0
   uint8_t leap_version_mode;
   uint8_t stratum;
@@ -57,6 +59,7 @@ static struct ntp_server_destinations dests[] = {
 
 static void ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port) {
   struct ntp_server_destinations *src = NULL;
+  uint32_t us, clocks;
   uint32_t packet_ts = now();
 
   for(int i = 0; dests[i].ipstr != NULL; i++) {
@@ -92,8 +95,8 @@ static void ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_ad
   src->last_rx_s = response.rx_s;
   src->last_rx_subs = response.rx_subs;
 
-  uint32_t clocks = src->end_ntp - src->start_ntp;
-  uint32_t us = clocks / 144; // 144 cycles per 1us
+  clocks = src->end_ntp - src->start_ntp;
+  us = clocks / 144; // 144 cycles per 1us
   printf("%s %u %u %u %u %u %u %u %u\n", src->ipstr, sys_now(), us, clocks, src->end_ntp,
     ntohl(response.rx_s), ntohl(response.rx_subs), ntohl(response.tx_s), ntohl(response.tx_subs));
 
@@ -103,7 +106,7 @@ free_return:
 
 static void ntp_send(struct ntp_server_destinations *dest) {
   struct pbuf *p = pbuf_alloc(PBUF_TRANSPORT, sizeof(struct ntp_packet), PBUF_RAM);
-  err_enum_t err;
+  err_t err;
 
   if(!p) {
     printf("pbuf_alloc failed\n");
@@ -172,3 +175,5 @@ OS_TASK(ntp_poll, void) {
 
     OS_TASK_END(ntp_poll);
 }
+
+};
