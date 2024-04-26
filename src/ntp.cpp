@@ -7,6 +7,10 @@ extern "C" {
 #include "main.h"
 #include "ntp.h"
 #include "timer.h"
+#include "ClockPID.h"
+#include "NTPClock.h"
+#include "platform-clock.h"
+#include "int64.h"
 
 #include "lwip/udp.h"
 
@@ -48,14 +52,66 @@ struct ntp_server_destinations {
   uint32_t end_ntp;
   uint32_t last_rx_s;
   uint32_t last_rx_subs;
+  uint8_t sync_clock;
 };
 
 static struct ntp_server_destinations dests[] = {
-  {.ipstr = "10.42.0.1"},
-  {.ipstr = "10.1.2.143"},
-  {.ipstr = "10.1.2.139"},
+  {.ipstr = "10.42.0.1", .sync_clock = 0},
+  {.ipstr = "10.1.2.143", .sync_clock = 1},
+  {.ipstr = "10.1.2.139", .sync_clock = 0},
   {.ipstr = NULL},
 };
+
+uint64_t clock;
+
+static void sync_clock(
+  float rtt_us,
+  const struct ntp_server_destinations *src,
+  const struct ntp_packet *response
+) {
+  uint64_t rx, tx;
+  int64_t offset;
+  uint32_t adjusted_local, adjust_amount;
+  int64_t proctime;
+  float proctime_us;
+  char intbuf[ITOA_BUFFER_SIZE];
+
+  rx = ntohl(response->rx_s);
+  rx = (rx << 32) | ntohl(response->rx_subs);
+  tx = ntohl(response->tx_s);
+  tx = (tx << 32) | ntohl(response->tx_subs);
+
+  proctime = tx - rx;
+  proctime_us = proctime / 4294.967296;
+  rtt_us -= proctime_us;
+
+  adjust_amount = (rtt_us / 1000000 / 2) * COUNTSPERSECOND;
+  adjusted_local = src->start_ntp + adjust_amount;
+
+  if (!localClock.isTimeSet()) {
+    u64toa(rx, intbuf);
+    printf("set clock %u (%u) rtt %d to %s\n", adjusted_local, adjust_amount, (int)(rtt_us*1000), intbuf);
+    localClock.setTime(adjusted_local, rx);
+    return;
+  }
+
+  offset = localClock.getOffset(adjusted_local, rx);
+
+  float ppm = ClockPID.add_sample(src->start_ntp, rx, offset);
+  localClock.setPpb(ppm * 1000000000);
+  i64toa(offset, intbuf);
+  printf("update %s %u %u %u %u %d %d %d %d\n", 
+    intbuf,
+    (unsigned)(rtt_us*1000),
+    adjusted_local,
+    adjust_amount,
+    (unsigned)proctime,
+    (int)(ppm*1000000000),
+    (int)(ClockPID.p_out()*1000000000),
+    (int)(ClockPID.i_out()*1000000000),
+    (int)(ClockPID.d_out()*1000000000)
+  );
+}
 
 static void ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port) {
   struct ntp_server_destinations *src = NULL;
@@ -100,6 +156,10 @@ static void ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_ad
   rtt_us = clocks / 144.0; // 144MHz
   //printf("%s %u %u %u %u %u %u %u %u\n", src->ipstr, sys_now(), (int)(rtt_us * 1000), clocks, src->end_ntp,
   //  ntohl(response.rx_s), ntohl(response.rx_subs), ntohl(response.tx_s), ntohl(response.tx_subs));
+
+  if (src->sync_clock) {
+    sync_clock(rtt_us, src, &response);
+  }
 
 free_return:
   pbuf_free(p);
