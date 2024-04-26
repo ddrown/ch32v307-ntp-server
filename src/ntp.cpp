@@ -59,8 +59,9 @@ static struct ntp_server_destinations dests[] = {
 
 static void ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port) {
   struct ntp_server_destinations *src = NULL;
-  uint32_t us, clocks;
-  uint32_t packet_ts = now();
+  uint32_t clocks;
+  float rtt_us;
+  uint32_t packet_ts = time_now();
 
   for(int i = 0; dests[i].ipstr != NULL; i++) {
     if(ip_2_ip4(addr)->addr == ip_2_ip4(&dests[i].dest_addr)->addr) {
@@ -96,9 +97,9 @@ static void ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_ad
   src->last_rx_subs = response.rx_subs;
 
   clocks = src->end_ntp - src->start_ntp;
-  us = clocks / 144; // 144 cycles per 1us
-  printf("%s %u %u %u %u %u %u %u %u\n", src->ipstr, sys_now(), us, clocks, src->end_ntp,
-    ntohl(response.rx_s), ntohl(response.rx_subs), ntohl(response.tx_s), ntohl(response.tx_subs));
+  rtt_us = clocks / 144.0; // 144MHz
+  //printf("%s %u %u %u %u %u %u %u %u\n", src->ipstr, sys_now(), (int)(rtt_us * 1000), clocks, src->end_ntp,
+  //  ntohl(response.rx_s), ntohl(response.rx_subs), ntohl(response.tx_s), ntohl(response.tx_subs));
 
 free_return:
   pbuf_free(p);
@@ -123,7 +124,7 @@ static void ntp_send(struct ntp_server_destinations *dest) {
   request->rx_s = htonl(dest->end_ntp);
   request->rx_subs = htonl(0);
 
-  dest->start_ntp = now();
+  dest->start_ntp = time_now();
   request->tx_s = htonl(dest->start_ntp);
   request->tx_subs = htonl(0);
 

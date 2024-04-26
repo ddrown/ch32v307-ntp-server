@@ -4,7 +4,7 @@
 #include <ch32v30x_rcc.h>
 #include <ch32v30x_tim.h>
 
-uint32_t now() {
+uint32_t time_now() {
   uint16_t t1b, t2, t1a;
   
   t1b = TIM2->CNT;

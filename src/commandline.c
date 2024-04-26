@@ -103,7 +103,7 @@ static void run_command(char *cmdline) {
   } else if(strncmp("ping6 ", cmdline, 5) == 0) {
     ping6_send(cmdline+6);
   } else if(strcmp("tim", cmdline) == 0) {
-    printf("%lu %lu\n", now(), sys_now());
+    printf("%lu %lu\n", time_now(), sys_now());
   } else if(strcmp("phy", cmdline) == 0) {
     phy_status();
   } else if(strcmp("mac", cmdline) == 0) {

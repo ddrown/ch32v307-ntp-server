@@ -34,7 +34,7 @@ static unsigned char ping6_recv(void *arg, struct raw_pcb *pcb, struct pbuf *p, 
     return 0;
   }
 
-  end_ping = now();
+  end_ping = time_now();
   uint32_t clocks = end_ping - start_ping;
   uint32_t us = clocks / 144; // 144MHz, 144 clocks per us
 
@@ -67,7 +67,7 @@ void ping6_send(const char *dest) {
   icmph->id     = htons(12345);
   icmph->seqno  = htons(ping_seq++);
 
-  start_ping = now();
+  start_ping = time_now();
   raw_sendto(ping_pcb, p, &dest_addr);
   pbuf_free(p);
 }
